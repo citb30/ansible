@@ -1,0 +1,14 @@
+- name: Configure MariaDB 
+  hosts: SAMPLE
+  become: yes
+  tasks:
+    - name: Install Mariadb 
+      package:
+        name: mariadb-server 
+        state: latest 
+
+    - name: Start MariaDB Service
+      service:
+        name: mariadb
+        state: started
+        enabled: yes
