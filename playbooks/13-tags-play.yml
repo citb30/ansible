@@ -1,0 +1,26 @@
+- name: Run DB Setup 
+  hosts: SAMPLE
+  tags: DB 
+  tasks:
+    - name: DB Setup 
+      debug:
+        msg: "DB Setup"
+
+- name: Run APP Setup
+  hosts: SAMPLE
+  tags: APP
+  tasks:
+    - name: APP Setup 
+      debug:
+        msg: "APP Setup"
+
+- name: Run WEB Setup
+  hosts: SAMPLE
+  tags: WEB
+  tasks:
+    - name: WEB Setup 
+      debug:
+        msg: "WEB Setup"
+
+# ansible-playbook playbooks/13-tags-play.yml   --tags DB,APP
+# ansible-playbook playbooks/13-tags-play.yml   --tags APP

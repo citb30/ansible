@@ -1,0 +1,7 @@
+- name: Run DB Setup 
+  hosts: SAMPLE
+  gather_facts: no  ## Alternatively you can disable them in ansible.cfg 
+  tasks:
+    - name: DB Setup 
+      debug:
+        msg: "DB Setup"

@@ -1,0 +1,14 @@
+- name: Tags on task level 
+  hosts: SAMPLE
+  tasks:
+    - name: DB Task 
+      debug:
+        msg: "DB Task"
+      tags: DB
+      
+    - name: APP Task 
+      debug:
+        msg: "APP Task"
+      tags: APP
+
+# ansible-playbook playbooks/14-tags-tasks.yml  --tags APP
