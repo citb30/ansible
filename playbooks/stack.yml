@@ -2,6 +2,8 @@
   hosts: SAMPLE
   become: yes
   tags: DB 
+  vars_files:
+    - db-cred.yml
   tasks:
     - name: Install Mariadb 
       package:
@@ -29,8 +31,8 @@
       
     - name: Add student user
       mysql_user:
-        name: student
-        password: student@1
+        name: "{{DBUSERNAME}}"
+        password: "{{DBPASSWORD}}"
         priv: 'studentapp.*:ALL'
         state: present
 
@@ -43,19 +45,130 @@
 - name: Configure Tomcat
   hosts: SAMPLE
   become: yes
+  gather_facts: yes
   tags: APP
   vars:
     TURL: "http://www-us.apache.org/dist/tomcat/tomcat-9/v9.0.11/bin/apache-tomcat-9.0.11.tar.gz"
     TTAR: "{{ TURL.split('/') | last }}"
+    TDIR: "/opt/{{ TTAR.split('.tar.gz') | first }}"
+    WAR_URL: "https://github.com/cit-aliqui/APP-STACK/raw/master/student.war"
+    JAR_URL: "https://github.com/cit-aliqui/APP-STACK/raw/master/mysql-connector-java-5.1.40.jar"
+  vars_files:
+    - db-cred.yml
   tasks:
     - name: Install Java 
       package:
         name: java
         state: installed 
 
-    - name: Download Tomcat 
-      get_url:
-        url: "{{ TURL }}"
-        dest: "/opt/{{TTAR}}"
+    #- name: Download Tomcat 
+    #  get_url:
+    #    url: "{{ TURL }}"
+    #    dest: "/opt/{{TTAR}}"
 
+    - name: Download and extract tomcat
+      unarchive:
+        src: "{{ TURL }}"
+        dest: /opt
+        remote_src: yes
+    
+    - name: Find files in webapps
+      find:
+        paths: "{{TDIR}}/webapps"
+        file_type: any 
+      register: OUT 
+
+    - name: Remove files in webapps 
+      file:
+        path: "{{item.path}}"
+        state: absent
+      loop: "{{OUT.files}}"
+
+    - name: Download WAR file 
+      get_url:
+        url: "{{WAR_URL}}"
+        dest: "{{TDIR}}/webapps/student.war"
+    
+    - name: Download JDBC JAR File 
+      get_url:
+        url: "{{JAR_URL}}"
+        dest:  "{{TDIR}}/lib/mysql-connector-java.jar"
         
+    - name: Update context.xml with JDBC Connection 
+      lineinfile:
+        path: "{{TDIR}}/conf/context.xml"
+        insertbefore: '</Context>'
+        line: "{{CONTEXT}}"
+    
+    - name: Check whether tomcat is running or not.
+      shell: ps -ef | grep apache-tomcat | grep -v grep &>/dev/null
+      register: OUT 
+      ignore_errors: yes
+
+    - name: Stop Tomcat 
+      shell: "{{TDIR}}/bin/shutdown.sh"
+      when: OUT.rc == 0
+
+    - name: Check Tomcat is closed or not.
+      wait_for:
+        port: 8080
+        delay: 10
+        state: stopped
+      when: OUT.rc == 0 
+
+    - name: Start Tomcat 
+      shell: "nohup {{TDIR}}/bin/startup.sh"
+
+    - name: Check Tomcat is started or not.
+      wait_for:
+        port: 8080
+        delay: 10
+        state: started
+        timeout: 120
+
+- name: Configure HTTPD
+  hosts: SAMPLE
+  become: yes
+  gather_facts: yes
+  tags: WEB
+  vars:
+    JK_URL: https://github.com/citb30/project-1/raw/master/mod_jk.so 
+  tasks:
+    - name: Install Web Server 
+      package:
+        name: httpd
+        state: latest 
+
+    - name: Download MOD_JK SO 
+      get_url:
+        url: "{{JK_URL}}"
+        dest: /etc/httpd/modules/mod_jk.so 
+        mode: 0755
+
+    - name: Update mod_jk properties.
+      blockinfile:
+        path: /etc/httpd/conf.d/mod-jk.conf
+        create: yes
+        block: | 
+          LoadModule jk_module modules/mod_jk.so
+          JkWorkersFile conf.d/worker.properties
+          JkMount /student local
+          JkMount /student/* local
+        
+    - name: Update workers properties.
+      blockinfile:
+        path: /etc/httpd/conf.d/worker.properties
+        create: yes
+        block: | 
+          worker.list=local
+          worker.local.host=localhost
+          worker.local.port=8009
+
+    - name: Start httpd 
+      service:
+        name: httpd
+        state: restarted 
+        enabled: yes
+
+
+

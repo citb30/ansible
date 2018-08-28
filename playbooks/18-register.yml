@@ -1,0 +1,8 @@
+- name: Demo on resgister 
+  hosts: SAMPLE
+  tasks:
+    - shell: uptime
+      register: OUT
+
+    - debug: msg="{{OUT}}"
+    

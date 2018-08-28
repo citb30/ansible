@@ -1,0 +1,14 @@
+- name: Find and Remove files
+  hosts: SAMPLE
+  become: yes
+  tasks:
+    - find:
+        paths: /tmp/out 
+        #recurse: yes
+        file_type: any
+      register: out 
+
+    - file: 
+        path: "{{item.path}}"
+        state: absent
+      loop: "{{out.files}}"

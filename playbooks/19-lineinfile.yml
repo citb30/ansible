@@ -1,0 +1,7 @@
+- name: lineinfile module 
+  hosts: SAMPLE 
+  tasks:
+    - lineinfile:
+        path: /tmp/context.xml
+        insertbefore: '</Context>'
+        line: HELLO
