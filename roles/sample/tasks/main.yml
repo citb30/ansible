@@ -1,0 +1,3 @@
+- name: Task1 from role sample
+  debug:
+    msg: URL = {{URL}}

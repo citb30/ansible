@@ -1,0 +1,18 @@
+- name: Demo on handlers
+  hosts: SAMPLE
+  tasks:
+    - name: Task1
+      shell: echo Task1
+      notify: action1
+
+    - name: Task2
+      debug:  
+        msg: Task2
+    - name: Task3 
+      debug:  
+        msg: Task3
+
+  handlers:
+    - name: action1
+      debug:
+        msg: Action 1 is getting exeecuted.
