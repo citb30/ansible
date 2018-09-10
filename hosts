@@ -3,4 +3,4 @@ test #URL=hosts.google.com
 [SAMPLE:vars]
 URL=group.google.com
 [SAMPLE]
-test
+studevapp01

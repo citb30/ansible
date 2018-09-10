@@ -1,0 +1,6 @@
+- hosts: SAMPLE
+  gather_facts: yes
+  tasks:
+    - name: Print local facts
+      debug: 
+        msg: "{{ansible_local.info.env}}"
